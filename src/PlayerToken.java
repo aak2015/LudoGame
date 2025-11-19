@@ -5,7 +5,7 @@ import javax.swing.JComponent;
 public class PlayerToken extends JComponent{
     private Color color;
     private BoardSquare currentPosition;
-    private java.util.List<BoardSquare> movementPath;
+    private BoardSquare spawnSquare;
 
     public PlayerToken(Color tokenColor){
         this.color = tokenColor;
@@ -24,12 +24,12 @@ public class PlayerToken extends JComponent{
         return currentPosition;
     }
 
-    public void setMovementPath(java.util.List<BoardSquare> path){
-        this.movementPath = path;
+    public void setSpawnSquare(BoardSquare spawn){
+        this.spawnSquare = spawn;
     }
 
-    public java.util.List<BoardSquare> getMovementPath(){
-        return movementPath;
+    public BoardSquare getSpawnSquare(){
+        return this.spawnSquare;
     }
 
     @Override

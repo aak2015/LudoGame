@@ -4,9 +4,11 @@ import javax.swing.*;
 public class LudoBoardView extends JPanel{
     private static final int BOARD_SIZE = 15;
     private BoardSquare[][] squares = new BoardSquare[BOARD_SIZE][BOARD_SIZE];
+    private GameStatusInformation statusInfo;
 
     public LudoBoardView(){
         setLayout(new GridLayout(BOARD_SIZE, BOARD_SIZE,1,1));
+        statusInfo = new GameStatusInformation();
         buildBoard();
         
     }
@@ -118,9 +120,10 @@ public class LudoBoardView extends JPanel{
         boardFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         boardFrame.setSize(800, 800);
         LudoBoardView testView = new LudoBoardView();
+        boardFrame.setLayout(new BorderLayout());
 
-
-        boardFrame.add(testView);
+        boardFrame.add(testView, BorderLayout.CENTER);
+        boardFrame.add(testView.statusInfo, BorderLayout.SOUTH);
 
         GameLogic logic = new GameLogic(testView.getSquares());
         logic.initializePlayerTokens(Color.RED);
@@ -128,6 +131,7 @@ public class LudoBoardView extends JPanel{
         logic.initializePlayerTokens(Color.GREEN);
         logic.initializePlayerTokens(Color.BLUE);
         boardFrame.setVisible(true);
+        logic.startTurn();
 
     }
 

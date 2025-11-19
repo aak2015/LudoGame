@@ -76,7 +76,11 @@ public class BoardSquare extends JPanel{
     }
 
     public boolean isBlocked(){
-       return false;
+       return this.isBlocked;
+    }
+
+    public void setBlocked(boolean blocked){
+        this.isBlocked = blocked;
     }
 
     public int getRow(){
@@ -87,4 +91,7 @@ public class BoardSquare extends JPanel{
         return column;
     }
 
+    public ArrayList<PlayerToken> getTokens(){
+        return this.tokens;
+    }
 }
