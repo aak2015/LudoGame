@@ -3,12 +3,14 @@ import javax.swing.JComponent;
 
 
 public class PlayerToken extends JComponent{
-    private Color color;
+    private Color displayColor;
+    private Color canonicalColor;
     private BoardSquare currentPosition;
     private BoardSquare spawnSquare;
 
-    public PlayerToken(Color tokenColor){
-        this.color = tokenColor;
+    public PlayerToken(Color tokenColor, Color canonicalColor){
+        this.displayColor = tokenColor;
+        this.canonicalColor = canonicalColor;
         setPreferredSize(new Dimension(30,30));
     }
 
@@ -16,8 +18,8 @@ public class PlayerToken extends JComponent{
         this.currentPosition = square;
     }
 
-    public Color getColor(){
-        return color;
+    public Color getDisplayColor(){
+        return displayColor;
     }
 
     public BoardSquare getCurrentPosition(){
@@ -32,10 +34,18 @@ public class PlayerToken extends JComponent{
         return this.spawnSquare;
     }
 
+    public void setCanonicalColor(Color color){
+        this.canonicalColor = color;
+    }
+
+    public Color getCanonicalColor(){
+        return this.canonicalColor;
+    }
+
     @Override
     protected void paintComponent(Graphics g){
         super.paintComponent(g);
-        g.setColor(color);
+        g.setColor(displayColor);
         g.fillOval(5, 5, getWidth() - 10, getHeight() - 10);
     }
 }

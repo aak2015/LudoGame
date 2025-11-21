@@ -1,15 +1,27 @@
 import java.awt.Color;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import javax.swing.JOptionPane;
 
 public class GameLogic {
+    public static final Color RED_KEY = Color.RED;
+    public static final Color GREEN_KEY = Color.GREEN;
+    public static final Color BLUE_KEY = Color.BLUE;
+    public static final Color YELLOW_KEY = Color.YELLOW;
+
+    public static final Color RED_TOKEN = Color.RED.darker().darker();
+    public static final Color GREEN_TOKEN = Color.GREEN.darker().darker();
+    public static final Color BLUE_TOKEN = Color.BLUE.darker().darker();
+    public static final Color YELLOW_TOKEN = Color.YELLOW.darker().darker();
+
     private Map<Color, List<BoardSquare>> playPaths;
     private Map<Color, List<PlayerToken>> playTokens = new HashMap<>();
     private BoardSquare[][] squares;
@@ -17,20 +29,58 @@ public class GameLogic {
     private List<Color> playerOrder;
     private int currentPlayerIndex = 0;
     private Random random = new Random();
+    private boolean waitingForDiceRoll = false;
+    private GameStatusInformation statusInfo;
 
-    public GameLogic(BoardSquare[][] squares){
+    public GameLogic(BoardSquare[][] squares, GameStatusInformation statusInfo){
         this.squares = squares;
+        this.statusInfo = statusInfo;
         this.playPaths = readPlayPaths();
+        generatePlayerOrder();
+        setUpRollButton();
+    }
+
+    private void setUpRollButton(){
+        this.statusInfo.getRollDiceButton().addActionListener(e -> {
+            if(waitingForDiceRoll){
+                waitingForDiceRoll = false;
+                processDiceRoll();
+            }
+        });
     }
 
     private Map<Color, List<BoardSquare>> readPlayPaths(){
         Map<Color, List<BoardSquare>> playPaths = new HashMap<Color, List<BoardSquare>>();
-        Color c = Color.RED.darker().darker();
-        playPaths.put(Color.RED.darker().darker(), new ArrayList<>());
-        playPaths.get(Color.RED.darker().darker()).add(squares[2][3]);
-        playPaths.get(Color.RED.darker().darker()).add(squares[1][6]);
 
-        //TODO: Parse play paths
+        playPaths.put(RED_KEY, new ArrayList<BoardSquare>());
+        playPaths.put(GREEN_KEY, new ArrayList<BoardSquare>()); 
+        playPaths.put(BLUE_KEY, new ArrayList<BoardSquare>());  
+        playPaths.put(YELLOW_KEY, new ArrayList<BoardSquare>());
+        
+        Map<Color, String> pathFiles = Map.of(
+            RED_KEY, "src/pathFiles/redPath.cfg",
+            GREEN_KEY, "src/pathFiles/greenPath.cfg",
+            BLUE_KEY, "src/pathFiles/bluePath.cfg",
+            YELLOW_KEY, "src/pathFiles/yellowPath.cfg"
+        );
+
+        for(Color color : pathFiles.keySet()){
+            String filePath = pathFiles.get(color);
+            try(BufferedReader br  = new BufferedReader(new FileReader(filePath))){
+                String line;
+                while((line = br.readLine()) != null){
+                    String[] parts = line.split(",");
+                    int row = Integer.parseInt(parts[0].trim());
+                    int col = Integer.parseInt(parts[1].trim());
+                    BoardSquare square = squares[row][col];
+                    playPaths.get(color).add(square);
+                }
+            }catch(IOException e){
+                System.err.println("Error reading the path configuration for color: " + color.toString());
+                System.exit(1);
+            }
+        }
+
         return playPaths;
     }
 
@@ -45,7 +95,23 @@ public class GameLogic {
                         return;
                     }
 
-                    PlayerToken token = new PlayerToken(playerColor.darker().darker());
+                    Color displayColor;
+                    Color canonicalColor;
+                    if(playerColor.equals(RED_KEY)){
+                        displayColor = RED_TOKEN;
+                        canonicalColor = RED_KEY;
+                    }else if(playerColor.equals(GREEN_KEY)){
+                        displayColor = GREEN_TOKEN;
+                        canonicalColor = GREEN_KEY;
+                    }else if(playerColor.equals(BLUE_KEY)){
+                        displayColor = BLUE_TOKEN;
+                        canonicalColor = BLUE_KEY;
+                    }else{
+                        displayColor = YELLOW_TOKEN;
+                        canonicalColor = YELLOW_KEY;
+                    }
+
+                    PlayerToken token = new PlayerToken(displayColor, canonicalColor);
                     
                     attachListener(token);
                     square.placePlayerToken(token);
@@ -85,7 +151,7 @@ public class GameLogic {
         token.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e){
-                System.out.println("Clicked on a " + token.getColor() + " at (" + token.getCurrentPosition().getRow() + ", " + token.getCurrentPosition().getColumn() + ")");
+                System.out.println("Clicked on a " + token.getDisplayColor() + " at (" + token.getCurrentPosition().getRow() + ", " + token.getCurrentPosition().getColumn() + ")");
                 moveToken(token, diceRoll);
             }
         });
@@ -103,7 +169,7 @@ public class GameLogic {
 
     private void moveToken(PlayerToken token, int distance){
         if(!validateMove(token, distance)){
-            System.out.println("Invalid move for token of color " + token.getColor());
+            System.out.println("Invalid move for token of color " + token.getDisplayColor());
             return;
         }
 
@@ -121,15 +187,15 @@ public class GameLogic {
         
         ArrayList<PlayerToken> tokens = next.getTokens();
         if(tokens.size() > 1){
-            boolean noOpponentTokens = tokens.stream().allMatch(t -> t.getColor().equals(token.getColor()));
+            boolean noOpponentTokens = tokens.stream().allMatch(t -> t.getDisplayColor().equals(token.getDisplayColor()));
 
             if(noOpponentTokens){
                 next.setBlocked(true);
-                System.out.println("Square is now blocked by: " + token.getColor());
+                System.out.println("Square is now blocked by: " + token.getDisplayColor());
             }else{
                 for(PlayerToken t : tokens){
-                    if(!t.getColor().equals(token.getColor())){
-                        System.out.println("Returning token of color " + t.getColor() + " to start.");
+                    if(!t.getDisplayColor().equals(token.getDisplayColor())){
+                        System.out.println("Returning token of color " + t.getDisplayColor() + " to start.");
                         returnToStart(t);
                     }
                 }
@@ -137,6 +203,11 @@ public class GameLogic {
                 next.setBlocked(false);
             }
 
+        }
+
+        if(!isGameOver()){
+            advancePlayerTurn();
+            startTurn();
         }
     }
 
@@ -162,14 +233,25 @@ public class GameLogic {
 
 
     private boolean validateMove(PlayerToken token, int distance){
-        List<BoardSquare> path = playPaths.get(token.getColor());
+        List<BoardSquare> path = playPaths.get(token.getCanonicalColor());
 
         if(path == null){
             return false;
         }
 
+        boolean isAtSpawn = token.getCurrentPosition() == token.getSpawnSquare();
+        if(isAtSpawn){
+            if(distance == 6 && !path.get(0).isBlocked()){
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+
         BoardSquare current = token.getCurrentPosition();
         int startIndex = path.indexOf(current);
+
 
         if(startIndex == -1){
             return false;
@@ -190,7 +272,7 @@ public class GameLogic {
 
         BoardSquare endSquare = path.get(terminalIndex);
         if(endSquare.isBlocked()){
-            boolean colorMatch = endSquare.getTokens().stream().allMatch(t -> t.getColor().equals(token.getColor()));
+            boolean colorMatch = endSquare.getTokens().stream().allMatch(t -> t.getDisplayColor().equals(token.getDisplayColor()));
             if(!colorMatch){
                 System.out.println("End square is blocked by opponent tokens.");
                 return false;
@@ -202,12 +284,12 @@ public class GameLogic {
 
 
     private void returnToStart(PlayerToken token){
-        List<BoardSquare> path = playPaths.get(token.getColor());
+        List<BoardSquare> path = playPaths.get(token.getCanonicalColor());
         if(path == null || path.isEmpty()){
             return;
         }
 
-        BoardSquare spawn = path.get(0);
+        BoardSquare spawn = token.getSpawnSquare();
         BoardSquare current = token.getCurrentPosition();
 
         current.removeToken(token);
@@ -215,13 +297,19 @@ public class GameLogic {
     }
 
     public BoardSquare getNextSquare(PlayerToken token, int distance){
-        Color playerColor = token.getColor();
+        Color playerColor = token.getCanonicalColor();
         List<BoardSquare> colorPath = playPaths.get(playerColor);
         if(colorPath == null){
             return null;
         }
 
-        int currentPositionIndex = colorPath.indexOf(token.getCurrentPosition());
+        BoardSquare current = token.getCurrentPosition();
+
+        if(current == token.getSpawnSquare() && distance == 6){
+            return colorPath.get(0);
+        }
+
+        int currentPositionIndex = colorPath.indexOf(current);
         
         if(currentPositionIndex == -1){
             return null;
@@ -242,12 +330,24 @@ public class GameLogic {
     public void startTurn(){
         Color currentPlayer = playerOrder.get(currentPlayerIndex);
         
+        statusInfo.setCurrentPlayer(currentPlayer);
+        statusInfo.setDiceRoll('-');
+        waitingForDiceRoll = true;
+    }
+
+    private void processDiceRoll(){
+        Color currentPlayer = playerOrder.get(currentPlayerIndex);
         int roll = rollDice();
+        statusInfo.setDiceRoll(diceRoll);
         List<PlayerToken> validMoves = getValidMoves(currentPlayer);
 
         if(validMoves.isEmpty()){
             System.out.println("No valid moves for player: " + currentPlayer);
             advancePlayerTurn();
+            javax.swing.SwingUtilities.invokeLater(() -> startTurn());
+            return;
+        }else{
+            System.out.println("Waiting for token selection.");
         }
     }
 
@@ -255,18 +355,15 @@ public class GameLogic {
 
     private void advancePlayerTurn(){
         currentPlayerIndex = (currentPlayerIndex + 1) % playerOrder.size();
-        if(!isGameOver()){
-            
-            startTurn();
-        }
+        
     }
 
     public void generatePlayerOrder(){
         Map<Color, Integer> results = new HashMap<>();
-        results.put(Color.RED, rollDice());
-        results.put(Color.GREEN, rollDice());
-        results.put(Color.BLUE, rollDice());
-        results.put(Color.YELLOW, rollDice());
+        results.put(RED_KEY, rollDice());
+        results.put(GREEN_KEY, rollDice());
+        results.put(BLUE_KEY, rollDice());
+        results.put(YELLOW_KEY, rollDice());
 
         playerOrder = new ArrayList<>(results.keySet().stream()
             .sorted((c1, c2) -> results.get(c2) - results.get(c1))

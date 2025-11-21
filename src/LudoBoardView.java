@@ -125,11 +125,11 @@ public class LudoBoardView extends JPanel{
         boardFrame.add(testView, BorderLayout.CENTER);
         boardFrame.add(testView.statusInfo, BorderLayout.SOUTH);
 
-        GameLogic logic = new GameLogic(testView.getSquares());
-        logic.initializePlayerTokens(Color.RED);
-        logic.initializePlayerTokens(Color.YELLOW);
-        logic.initializePlayerTokens(Color.GREEN);
-        logic.initializePlayerTokens(Color.BLUE);
+        GameLogic logic = new GameLogic(testView.getSquares(), testView.statusInfo);
+        logic.initializePlayerTokens(GameLogic.RED_KEY);
+        logic.initializePlayerTokens(GameLogic.YELLOW_KEY);
+        logic.initializePlayerTokens(GameLogic.GREEN_KEY);
+        logic.initializePlayerTokens(GameLogic.BLUE_KEY);
         boardFrame.setVisible(true);
         logic.startTurn();
 
