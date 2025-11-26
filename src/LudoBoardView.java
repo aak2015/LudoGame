@@ -77,13 +77,8 @@ public class LudoBoardView extends JPanel{
         // Red HOME_PATH (vertical, middle column)
         else if (column == 7 && row < 6) {
             color = Color.RED;
+            classification = BoardSquare.SquareClassification.HOME_PATH;
             
-            if (column == 7 && row == 0) {
-                classification = BoardSquare.SquareClassification.SAFE;
-                
-            }else{
-                classification = BoardSquare.SquareClassification.HOME_PATH;
-            }
         }
 
         // Green HOME_PATH (horizontal, middle row)
@@ -107,6 +102,11 @@ public class LudoBoardView extends JPanel{
         //Reset squares to NORMAL for corners around the home.
         if((row == 6 && column == 6) || (row == 8 && column == 6) || (row == 6 && column == 8) || (row == 8 && column == 8)){
             classification = BoardSquare.SquareClassification.NORMAL;
+        }
+
+        //SAFFE squares
+        if((row == 1 && column == 6) || (row == 8 && column == 1) || (row == 13 && column == 8) || (row == 6 && column ==13) || (row == 2 && column == 8) || (row == 6 && column == 2) || (row == 12 && column == 6) || (row == 8 && column == 12)){
+            classification = BoardSquare.SquareClassification.SAFE;
         }
 
         return new BoardSquare(color, classification, row, column);       
