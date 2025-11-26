@@ -184,18 +184,24 @@ public class GameLogic {
             return;
         }
 
+        //Ensure blocks are removed when a token leaves a square & the number of tokens drops to 1 or 0.
+        ArrayList<PlayerToken> prevTokens = current.getTokens();
+        if(prevTokens.size() <= 1){
+            current.setBlocked(false);
+        }
+
         
         ArrayList<PlayerToken> tokens = next.getTokens();
         if(tokens.size() > 1){
-            boolean noOpponentTokens = tokens.stream().allMatch(t -> t.getDisplayColor().equals(token.getDisplayColor()));
+            boolean noOpponentTokens = tokens.stream().allMatch(t -> t.getCanonicalColor().equals(token.getCanonicalColor()));
 
             if(noOpponentTokens){
                 next.setBlocked(true);
-                System.out.println("Square is now blocked by: " + token.getDisplayColor());
+                System.out.println("Square is now blocked by: " + token.getCanonicalColor());
             }else{
                 for(PlayerToken t : tokens){
-                    if(!t.getDisplayColor().equals(token.getDisplayColor())){
-                        System.out.println("Returning token of color " + t.getDisplayColor() + " to start.");
+                    if(!t.getCanonicalColor().equals(token.getCanonicalColor())){
+                        System.out.println("Returning token of color " + t.getCanonicalColor() + " to start.");
                         returnToStart(t);
                     }
                 }
@@ -239,13 +245,17 @@ public class GameLogic {
             return false;
         }
 
-        boolean isAtSpawn = token.getCurrentPosition() == token.getSpawnSquare();
+        System.out.println(token.getSpawnSquare());
+        System.out.println(token.getCurrentPosition());
+
+        boolean isAtSpawn = token.getCurrentPosition().equals(token.getSpawnSquare());
         if(isAtSpawn){
-            if(distance == 6 && !path.get(0).isBlocked()){
-                return true;
-            }else{
-                return false;
+            if(distance == 6){
+                BoardSquare entry = path.get(0);
+                boolean entryBlocked = entry.isBlocked() && !entry.getTokens().stream().anyMatch(t -> !t.getCanonicalColor().equals(token.getCanonicalColor()));
+                return !entryBlocked;
             }
+            return false;
         }
 
 
@@ -265,14 +275,17 @@ public class GameLogic {
         //Check if there is a blocked square in the path - amend logic is needed
         for(int i = startIndex; i < terminalIndex; i++){
             if(path.get(i).isBlocked()){
-                System.out.println("Square is blocked. Cannot move past blocked index: " + i);
-                return false;
+                boolean sameColor = path.get(i).getTokens().stream().allMatch(t -> t.getCanonicalColor().equals(token.getCanonicalColor()));
+                if(!sameColor){
+                    System.out.println("Square is blocked. Cannot move past blocked index: " + i);
+                    return false;
+                }
             }
         }
 
         BoardSquare endSquare = path.get(terminalIndex);
         if(endSquare.isBlocked()){
-            boolean colorMatch = endSquare.getTokens().stream().allMatch(t -> t.getDisplayColor().equals(token.getDisplayColor()));
+            boolean colorMatch = endSquare.getTokens().stream().allMatch(t -> t.getCanonicalColor().equals(token.getCanonicalColor()));
             if(!colorMatch){
                 System.out.println("End square is blocked by opponent tokens.");
                 return false;
@@ -331,14 +344,14 @@ public class GameLogic {
         Color currentPlayer = playerOrder.get(currentPlayerIndex);
         
         statusInfo.setCurrentPlayer(currentPlayer);
-        statusInfo.setDiceRoll('-');
+        statusInfo.setDiceRoll("-");
         waitingForDiceRoll = true;
     }
 
     private void processDiceRoll(){
         Color currentPlayer = playerOrder.get(currentPlayerIndex);
-        int roll = rollDice();
-        statusInfo.setDiceRoll(diceRoll);
+        rollDice();
+        statusInfo.setDiceRoll(diceRoll + "");
         List<PlayerToken> validMoves = getValidMoves(currentPlayer);
 
         if(validMoves.isEmpty()){

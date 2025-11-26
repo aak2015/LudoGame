@@ -59,6 +59,9 @@ public class BoardSquare extends JPanel{
         
         tokens.add(token);
         token.setCurrentBoardSquare(this);
+        if(this.getSquareClassification() == SquareClassification.TOKEN_SPAWN){
+            token.setSpawnSquare(this);
+        }
 
         removeAll();
         
@@ -93,5 +96,23 @@ public class BoardSquare extends JPanel{
 
     public ArrayList<PlayerToken> getTokens(){
         return this.tokens;
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if(this == obj) return true;
+        if(!(obj instanceof BoardSquare)) return false;
+        BoardSquare other = (BoardSquare) obj;
+        return this.row == other.row && this.column == other.column;
+    }
+
+    @Override
+    public int hashCode(){
+        return 31 * row + column;
+    }
+
+    @Override
+    public String toString(){
+        return "BoardSquare[row=" + row + ", column=" + column + ", classification=" + squareClassification + "]";
     }
 }

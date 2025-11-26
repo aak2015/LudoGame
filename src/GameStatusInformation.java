@@ -26,10 +26,12 @@ public class GameStatusInformation extends JPanel{
 
     public void setCurrentPlayer(Color color){
         currentPlayer.setText("Current Player: " + color.toString());
+        repaint();
     }
 
-    public void setDiceRoll(int roll){
+    public void setDiceRoll(String roll){
         diceLabel.setText("Dice Roll: " + roll);
+        repaint();
     }
 
      
