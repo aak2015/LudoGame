@@ -25,7 +25,19 @@ public class GameStatusInformation extends JPanel{
     }
 
     public void setCurrentPlayer(Color color){
-        currentPlayer.setText("Current Player: " + color.toString());
+        String playerString = "";
+
+        if(color == GameLogic.RED_KEY){
+            playerString = "RED";
+        }else if(color == GameLogic.YELLOW_KEY){
+            playerString = "YELLOW";
+        }else if(color == GameLogic.GREEN_KEY){
+            playerString = "GREEN";
+        }else if(color == GameLogic.BLUE_KEY){
+            playerString = "BLUE";
+        }
+
+        currentPlayer.setText("Current Player: " + playerString);
         repaint();
     }
 

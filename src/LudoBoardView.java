@@ -104,7 +104,7 @@ public class LudoBoardView extends JPanel{
             classification = BoardSquare.SquareClassification.NORMAL;
         }
 
-        //SAFFE squares
+        //SAFE squares
         if((row == 1 && column == 6) || (row == 8 && column == 1) || (row == 13 && column == 8) || (row == 6 && column ==13) || (row == 2 && column == 8) || (row == 6 && column == 2) || (row == 12 && column == 6) || (row == 8 && column == 12)){
             classification = BoardSquare.SquareClassification.SAFE;
         }
@@ -112,27 +112,8 @@ public class LudoBoardView extends JPanel{
         return new BoardSquare(color, classification, row, column);       
     }
 
-
-
-
-    public static void main(String[] args) {
-        JFrame boardFrame = new JFrame("Ludo Board Test");
-        boardFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        boardFrame.setSize(800, 800);
-        LudoBoardView testView = new LudoBoardView();
-        boardFrame.setLayout(new BorderLayout());
-
-        boardFrame.add(testView, BorderLayout.CENTER);
-        boardFrame.add(testView.statusInfo, BorderLayout.SOUTH);
-
-        GameLogic logic = new GameLogic(testView.getSquares(), testView.statusInfo);
-        logic.initializePlayerTokens(GameLogic.RED_KEY);
-        logic.initializePlayerTokens(GameLogic.YELLOW_KEY);
-        logic.initializePlayerTokens(GameLogic.GREEN_KEY);
-        logic.initializePlayerTokens(GameLogic.BLUE_KEY);
-        boardFrame.setVisible(true);
-        logic.startTurn();
-
+    public GameStatusInformation getGameStatusInfo(){
+        return statusInfo;
     }
 
 }

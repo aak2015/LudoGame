@@ -31,11 +31,21 @@ public class GameLogic {
     private Random random = new Random();
     private boolean waitingForDiceRoll = false;
     private GameStatusInformation statusInfo;
+    private Map<Color, PlayerType> playerTypes = new HashMap<>();
+    private Map<Color, ComputerizedPlayer> computerPlayers = new HashMap<>();
 
-    public GameLogic(BoardSquare[][] squares, GameStatusInformation statusInfo){
+    public GameLogic(BoardSquare[][] squares, GameStatusInformation statusInfo, Map<Color, PlayerType> playerTypes){
         this.squares = squares;
         this.statusInfo = statusInfo;
         this.playPaths = readPlayPaths();
+        this.playerTypes = playerTypes;
+
+        for(Color color : playerTypes.keySet()){
+            if(playerTypes.get(color) == PlayerType.COMPUTER){
+                computerPlayers.put(color, new ComputerizedPlayer(color));
+            }
+        }
+
         generatePlayerOrder();
         setUpRollButton();
     }
@@ -228,7 +238,17 @@ public class GameLogic {
             BoardSquare home = path.get(path.size() - 1);
             boolean allAtHome = tokens.stream().allMatch(t -> t.getCurrentPosition() == home);
             if(allAtHome){
-                JOptionPane.showMessageDialog(null, "Player color " + color + " wins!");
+                String winner;
+                if(color == GameLogic.RED_KEY){
+                    winner = "Red";
+                }else if(color == GameLogic.GREEN_KEY){
+                    winner = "Green";
+                }else if(color == GameLogic.BLUE_KEY){
+                    winner = "Blue";
+                }else{
+                    winner = "Yellow";
+                }
+                JOptionPane.showMessageDialog(null, "Player color " + winner + " wins!");
                 removeListeners();
                 return true;
             }
@@ -337,15 +357,43 @@ public class GameLogic {
         return colorPath.get(nextPositionIndex);
     }
 
+    private void computerPlayerTurn(Color computerColor){
+        ComputerizedPlayer computer = computerPlayers.get(computerColor);
+        if(computer == null){
+            System.err.println("No computerized player found for color: " + computerColor);
+            return;
+        }
+
+        rollDice();
+        statusInfo.setDiceRoll(diceRoll + "");
+
+        List<PlayerToken> validMoves = getValidMoves(computerColor);
+        if(validMoves.isEmpty()){
+            System.out.println("No valid moves for computer player: " + computerColor);
+            advancePlayerTurn();
+            javax.swing.SwingUtilities.invokeLater(() -> startTurn());
+            return;
+        }
+
+        PlayerToken selectedToken = computer.makeMove(validMoves);
+        if(selectedToken != null){
+            moveToken(selectedToken, diceRoll);
+        }
+    }
+
     /**
      * Turn Logic - Start the turn for a player
      */
     public void startTurn(){
-        Color currentPlayer = playerOrder.get(currentPlayerIndex);
-        
+        Color currentPlayer = playerOrder.get(currentPlayerIndex);        
         statusInfo.setCurrentPlayer(currentPlayer);
         statusInfo.setDiceRoll("-");
-        waitingForDiceRoll = true;
+        
+        if (playerTypes.get(currentPlayer) == PlayerType.COMPUTER) {
+            javax.swing.SwingUtilities.invokeLater(() -> computerPlayerTurn(currentPlayer));
+        }else{
+            waitingForDiceRoll = true;
+        }
     }
 
     private void processDiceRoll(){
@@ -371,7 +419,7 @@ public class GameLogic {
         
     }
 
-    public void generatePlayerOrder(){
+    private void generatePlayerOrder(){
         Map<Color, Integer> results = new HashMap<>();
         results.put(RED_KEY, rollDice());
         results.put(GREEN_KEY, rollDice());
