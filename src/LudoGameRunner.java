@@ -1,18 +1,28 @@
 import java.awt.BorderLayout;
 import javax.swing.JFrame;
 
+/**
+ * Main class to run the Ludo game.
+ * @author Aakash Krishnan
+ * @version 1.0
+ * Last Modified: December 8, 2025
+ */
 public class LudoGameRunner {
         public static void main(String[] args) {
+        //Assemble the board.
         JFrame boardFrame = new JFrame("Ludo Board Test");
         boardFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+        
+        //Display the start screen.
         StartScreen initialize = new StartScreen();
         boardFrame.add(initialize);
         boardFrame.setSize(500,400);
         boardFrame.setVisible(true);
         
+        //Set up the listener for when the start screen input is processed.
         initialize.setListener(
             () -> {
+                //Setup the board view on successful input processing.
                 boardFrame.remove(initialize);
                 boardFrame.setSize(800, 800);
                 LudoBoardView testView = new LudoBoardView();

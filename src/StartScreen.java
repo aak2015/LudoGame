@@ -18,7 +18,14 @@ enum PlayerType{
     COMPUTER
 }
 
+/**
+ * The start screen panel for selecting game options before starting Ludo.
+ * @author Aakash Krishnan
+ * @version 1.0
+ * Last Modified: December 8, 2025
+ */
 public class StartScreen extends JPanel{
+    //Attributes
     private ButtonGroup computerCountGroup;
     private Map<Color, PlayerType> playerTypes = new HashMap<>();
     private JRadioButton zeroComputers;
@@ -33,6 +40,9 @@ public class StartScreen extends JPanel{
 
     private StartScreenListener listener;
 
+    /**
+     * Constructor for Start Screen.
+     */
     public StartScreen(){
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -97,6 +107,7 @@ public class StartScreen extends JPanel{
 
     }
 
+    //Process the input when the user clicks start game.
     private void processInput(){
         //Process computer count.
         int computerCount;
@@ -154,10 +165,18 @@ public class StartScreen extends JPanel{
         listener.onStartScreenInputProcessed();
     }
 
+    /**
+     * Get the mapping of player colors to their types.
+     * @return Map of player colors to PlayerType (HUMAN or COMPUTER)
+     */
     public Map<Color, PlayerType> getPlayerTypes(){
         return playerTypes;
     }
 
+    /**
+     * Set the listener for start screen events.
+     * @param listener The StartScreenListener to set.
+     */
     public void setListener(StartScreenListener listener){
         this.listener = listener;
     }

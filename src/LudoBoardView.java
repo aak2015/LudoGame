@@ -1,11 +1,21 @@
 import java.awt.*;
 import javax.swing.*;
 
+/**
+ * Represents the Ludo board view with all its squares and status information.
+ * @author Aakash Krishnan
+ * @version 1.0
+ * Last Modified: December 8, 2025
+ */
 public class LudoBoardView extends JPanel{
+    //Attributes
     private static final int BOARD_SIZE = 15;
     private BoardSquare[][] squares = new BoardSquare[BOARD_SIZE][BOARD_SIZE];
     private GameStatusInformation statusInfo;
 
+    /**
+     * Constructs the LudoBoardView with a grid of BoardSquares and status information.
+     */
     public LudoBoardView(){
         setLayout(new GridLayout(BOARD_SIZE, BOARD_SIZE,1,1));
         statusInfo = new GameStatusInformation();
@@ -13,10 +23,15 @@ public class LudoBoardView extends JPanel{
         
     }
 
+    /**
+     * Gets the 2D array of BoardSquares.
+     * @return The 2D array of BoardSquares.
+     */
     public BoardSquare[][] getSquares(){
         return squares;
     }
 
+    //Private method to build the board by creating and adding BoardSquares.
     private void buildBoard(){
         for(int row = 0; row < BOARD_SIZE; row++){
             for(int column = 0; column < BOARD_SIZE; column++){
@@ -29,7 +44,7 @@ public class LudoBoardView extends JPanel{
     }
 
 
-
+    //Private helper method to create a BoardSquare based on its position.
     private BoardSquare createSquare(int row, int column){
         Color color = Color.WHITE;
         BoardSquare.SquareClassification classification = BoardSquare.SquareClassification.NORMAL;
@@ -112,6 +127,10 @@ public class LudoBoardView extends JPanel{
         return new BoardSquare(color, classification, row, column);       
     }
 
+    /**
+     * Gets the GameStatusInformation panel.
+     * @return The GameStatusInformation panel.
+     */
     public GameStatusInformation getGameStatusInfo(){
         return statusInfo;
     }

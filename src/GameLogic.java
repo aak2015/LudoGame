@@ -11,45 +11,64 @@ import java.util.Map;
 import java.util.Random;
 import javax.swing.JOptionPane;
 
+/**
+ * Represents the core game logic for Ludo.
+ * @author Aakash Krishnan
+ * @version 1.0
+ * Last Modified: December 8, 2025
+ */
+
 public class GameLogic {
+    //Color constants for the canonical colors.
     public static final Color RED_KEY = Color.RED;
     public static final Color GREEN_KEY = Color.GREEN;
     public static final Color BLUE_KEY = Color.BLUE;
     public static final Color YELLOW_KEY = Color.YELLOW;
 
+    //Color constants for the display colors.
     public static final Color RED_TOKEN = Color.RED.darker().darker();
     public static final Color GREEN_TOKEN = Color.GREEN.darker().darker();
     public static final Color BLUE_TOKEN = Color.BLUE.darker().darker();
     public static final Color YELLOW_TOKEN = Color.YELLOW.darker().darker();
 
-    private Map<Color, List<BoardSquare>> playPaths;
+    //Attributes for the Game Logic object.
+    private Map<Color, List<BoardSquare>> playPaths; 
     private Map<Color, List<PlayerToken>> playTokens = new HashMap<>();
-    private BoardSquare[][] squares;
+    private BoardSquare[][] squares; //Represents the board.
     private int diceRoll;
     private List<Color> playerOrder;
     private int currentPlayerIndex = 0;
-    private Random random = new Random();
-    private boolean waitingForDiceRoll = false;
+    private Random random = new Random(); //For the dice.
+    private boolean waitingForDiceRoll = false; 
     private GameStatusInformation statusInfo;
     private Map<Color, PlayerType> playerTypes = new HashMap<>();
     private Map<Color, ComputerizedPlayer> computerPlayers = new HashMap<>();
 
+    /**
+     * Constructor for the Game Logic.
+     * @param squares The board squares.
+     * @param statusInfo The game status information panel.
+     * @param playerTypes The mapping of player colors to their types (human or computer).
+     */
     public GameLogic(BoardSquare[][] squares, GameStatusInformation statusInfo, Map<Color, PlayerType> playerTypes){
         this.squares = squares;
         this.statusInfo = statusInfo;
         this.playPaths = readPlayPaths();
         this.playerTypes = playerTypes;
 
+        //Generate a new computer player for each color whose key is 'COMPUTER'.
         for(Color color : playerTypes.keySet()){
             if(playerTypes.get(color) == PlayerType.COMPUTER){
                 computerPlayers.put(color, new ComputerizedPlayer(color));
             }
         }
 
+        //Get the turn order and set up the class.
         generatePlayerOrder();
         setUpRollButton();
     }
 
+    //Add the listener to the roll button.
     private void setUpRollButton(){
         this.statusInfo.getRollDiceButton().addActionListener(e -> {
             if(waitingForDiceRoll){
@@ -59,6 +78,7 @@ public class GameLogic {
         });
     }
 
+    //Read the play paths from configuration files.
     private Map<Color, List<BoardSquare>> readPlayPaths(){
         Map<Color, List<BoardSquare>> playPaths = new HashMap<Color, List<BoardSquare>>();
 
@@ -94,6 +114,7 @@ public class GameLogic {
         return playPaths;
     }
 
+    //Initialize player tokens on the board.
     public void initializePlayerTokens(Color playerColor){
 
         playTokens.putIfAbsent(playerColor, new ArrayList<>());
@@ -131,16 +152,22 @@ public class GameLogic {
         }
     }
 
+    //Rolls the dice.
     private int rollDice(){
         diceRoll = random.nextInt(6) + 1;
         System.out.println("Dice Roll: " + diceRoll);
         return diceRoll;
     }
 
+    /**
+     * Gets the current dice roll.
+     * @return The current dice roll.
+     */
     public int getDiceRoll(){
         return diceRoll;
     }
 
+    //Get all the valid moves for a particular player color.
     private List<PlayerToken> getValidMoves(Color playerColor){
         List<PlayerToken> validTokens = new ArrayList<>();
         List<PlayerToken> tokens = playTokens.get(playerColor);
@@ -157,6 +184,7 @@ public class GameLogic {
         return validTokens;
     }
 
+    //Attach a mouse listener to a token.
     private void attachListener(PlayerToken token){
         token.addMouseListener(new MouseAdapter() {
             @Override
@@ -167,6 +195,7 @@ public class GameLogic {
         });
     }
 
+    //Remove all listeners from tokens when the game ends.
     private void removeListeners(){
         for(List<PlayerToken> tokens : playTokens.values()){
             for(PlayerToken token : tokens){
@@ -177,15 +206,19 @@ public class GameLogic {
         }
     }
 
+    //Move a token by a certain distance.
     private void moveToken(PlayerToken token, int distance){
+        //Check if the move is valud.
         if(!validateMove(token, distance)){
             System.out.println("Invalid move for token of color " + token.getDisplayColor());
             return;
         }
 
+        //Get the current and next squares.
         BoardSquare current = token.getCurrentPosition();
         BoardSquare next = getNextSquare(token, distance);
 
+        //Ensure the destination is valid.
         if(next != null){
             current.removeToken(token);
             next.placePlayerToken(token);
@@ -200,7 +233,7 @@ public class GameLogic {
             current.setBlocked(false);
         }
 
-        
+        //Handle capturing opponent tokens and blocking logic.
         ArrayList<PlayerToken> tokens = next.getTokens();
         if(tokens.size() > 1){
             boolean noOpponentTokens = tokens.stream().allMatch(t -> t.getCanonicalColor().equals(token.getCanonicalColor()));
@@ -221,13 +254,14 @@ public class GameLogic {
 
         }
 
+        //Check for game over condition.
         if(!isGameOver()){
             advancePlayerTurn();
             startTurn();
         }
     }
 
-
+    //Check if the game is over.
     private boolean isGameOver(){
         for(Color color : playTokens.keySet()){
             List<PlayerToken> tokens = playTokens.get(color);
@@ -257,8 +291,9 @@ public class GameLogic {
         return false;
     }
 
-
+    //Validate if a move is possible for a token given a distance.
     private boolean validateMove(PlayerToken token, int distance){
+        //Get the token's play path.
         List<BoardSquare> path = playPaths.get(token.getCanonicalColor());
 
         if(path == null){
@@ -268,6 +303,7 @@ public class GameLogic {
         System.out.println(token.getSpawnSquare());
         System.out.println(token.getCurrentPosition());
 
+        //If the token is at spawn, check for a 6.
         boolean isAtSpawn = token.getCurrentPosition().equals(token.getSpawnSquare());
         if(isAtSpawn){
             if(distance == 6){
@@ -278,7 +314,7 @@ public class GameLogic {
             return false;
         }
 
-
+        //Get the current position index.
         BoardSquare current = token.getCurrentPosition();
         int startIndex = path.indexOf(current);
 
@@ -303,6 +339,7 @@ public class GameLogic {
             }
         }
 
+        //Ensure the destination is not blocked.
         BoardSquare endSquare = path.get(terminalIndex);
         if(endSquare.isBlocked()){
             boolean colorMatch = endSquare.getTokens().stream().allMatch(t -> t.getCanonicalColor().equals(token.getCanonicalColor()));
@@ -315,7 +352,7 @@ public class GameLogic {
         return true;
     }
 
-
+    //Return a token to its start position.
     private void returnToStart(PlayerToken token){
         List<BoardSquare> path = playPaths.get(token.getCanonicalColor());
         if(path == null || path.isEmpty()){
@@ -329,6 +366,12 @@ public class GameLogic {
         spawn.placePlayerToken(token);
     }
 
+    /**
+     * Gets the next square for a token given a distance.
+     * @param token The player token.
+     * @param distance The distance to move.
+     * @return The next BoardSquare or null if invalid.
+     */
     public BoardSquare getNextSquare(PlayerToken token, int distance){
         Color playerColor = token.getCanonicalColor();
         List<BoardSquare> colorPath = playPaths.get(playerColor);
@@ -357,6 +400,7 @@ public class GameLogic {
         return colorPath.get(nextPositionIndex);
     }
 
+    //Handle the computer player's turn.
     private void computerPlayerTurn(Color computerColor){
         ComputerizedPlayer computer = computerPlayers.get(computerColor);
         if(computer == null){
@@ -382,7 +426,7 @@ public class GameLogic {
     }
 
     /**
-     * Turn Logic - Start the turn for a player
+     * Starts the turn for the current player.
      */
     public void startTurn(){
         Color currentPlayer = playerOrder.get(currentPlayerIndex);        
@@ -396,6 +440,7 @@ public class GameLogic {
         }
     }
 
+    //Process the dice roll for the current player.
     private void processDiceRoll(){
         Color currentPlayer = playerOrder.get(currentPlayerIndex);
         rollDice();
@@ -413,12 +458,13 @@ public class GameLogic {
     }
 
 
-
+    //Advance to the next player's turn.
     private void advancePlayerTurn(){
         currentPlayerIndex = (currentPlayerIndex + 1) % playerOrder.size();
         
     }
 
+    //Generate the player order based on initial dice rolls.
     private void generatePlayerOrder(){
         Map<Color, Integer> results = new HashMap<>();
         results.put(RED_KEY, rollDice());
